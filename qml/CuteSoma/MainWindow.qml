@@ -58,8 +58,7 @@ PageStackWindow {
 
     Rectangle {
         color: "black"
-        opacity: 0.8
-        visible: serverComm.lastPlaying !== "" && platformWindow.viewMode === WindowState.Thumbnail
+        opacity: (serverComm.lastPlaying !== "" && platformWindow.viewMode === WindowState.Thumbnail) ? 0.8 : 0
         anchors.fill: parent
         Text {
             text: serverComm.lastPlaying
