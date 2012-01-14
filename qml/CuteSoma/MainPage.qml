@@ -30,7 +30,7 @@ Page {
     ListView
     {
          id: channelsView
-         model: ChannelsModel {}
+         model: ChannelsModel { id: channelsModel}
          delegate: ChannelsDelegate {}
          clip: true
          anchors.top: header.bottom
@@ -39,5 +39,13 @@ Page {
          anchors.bottom: parent.bottom
     }
 
+    BusyIndicator {
+        platformStyle: BusyIndicatorStyle {
+            size: "large"
+        }
+        visible: channelsModel.status == XmlListModel.Loading
+        running: visible
+        anchors.centerIn: parent
+    }
 
 }
