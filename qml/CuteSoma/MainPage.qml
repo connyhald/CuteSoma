@@ -6,24 +6,26 @@ Page {
 
     property string currentChannel: ""
 
-    Rectangle
-    {
-        id: header
-        height: 64
-        color: "#363636"
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.right: parent.right
-
-        Text
+    Component {
+        id: listHeader
+        Rectangle
         {
-            text: "CuteSoma"
-            color: "white"
-            font.family: "Nokia Pure Text Light"
-            font.pixelSize: 32
+            id: header
+            height: 64
+            color: "#363636"
             anchors.left: parent.left
-            anchors.leftMargin: 20
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+
+            Text
+            {
+                text: "CuteSoma"
+                color: "white"
+                font.family: "Nokia Pure Text Light"
+                font.pixelSize: 32
+                anchors.left: parent.left
+                anchors.leftMargin: 20
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
     }
 
@@ -32,11 +34,9 @@ Page {
          id: channelsView
          model: ChannelsModel { id: channelsModel}
          delegate: ChannelsDelegate {}
+         header: listHeader
          clip: true
-         anchors.top: header.bottom
-         anchors.left: parent.left
-         anchors.right: parent.right
-         anchors.bottom: parent.bottom
+         anchors.fill: parent
     }
 
     BusyIndicator {
