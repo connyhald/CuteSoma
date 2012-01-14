@@ -24,7 +24,7 @@ PageStackWindow {
             }
             ToolIcon {
                 iconId: "toolbar-view-menu"
-                onClicked: (menu.status === DialogStatus.Closed) ? menu.open() : menu.close()
+                onClicked: menu.open()
             }
         }
 
@@ -41,8 +41,6 @@ PageStackWindow {
     Menu
     {
         id: menu
-        //visualParent: pageStack
-
         MenuLayout
         {
             MenuItem
@@ -55,6 +53,26 @@ PageStackWindow {
                 text: "Quit"
                 onClicked: Qt.quit()
             }
+        }
+    }
+
+    Rectangle {
+        color: "black"
+        opacity: 0.8
+        visible: serverComm.lastPlaying !== "" && platformWindow.viewMode === WindowState.Thumbnail
+        anchors.fill: parent
+        Text {
+            text: serverComm.lastPlaying
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            color: "white"
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            font.pixelSize: 80
+            anchors.fill: parent
+            anchors.margins: 20
+        }
+        Behavior on opacity {
+            PropertyAnimation { duration: 250 }
         }
     }
 }

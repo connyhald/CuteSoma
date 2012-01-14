@@ -6,23 +6,29 @@ Page {
 
     property string currentChannel: ""
 
+    Header {
+        id: header
+        text: "CuteSoma"
+        portrait: appWindow.inPortrait
+        anchors.top: parent.top
+    }
+
     ListView
     {
          id: channelsView
          model: ChannelsModel { id: channelsModel}
          delegate: ChannelsDelegate {}
-         header: Header { text: "CuteSoma"; portrait: appWindow.inPortrait }
          clip: true
-         anchors.fill: parent
+         anchors.left: parent.left
+         anchors.right: parent.right
+         anchors.top: header.bottom
+         anchors.bottom: parent.bottom
     }
 
     BusyIndicator {
-        platformStyle: BusyIndicatorStyle {
-            size: "large"
-        }
+        platformStyle: BusyIndicatorStyle { size: "large" }
         visible: channelsModel.status == XmlListModel.Loading
         running: visible
         anchors.centerIn: parent
     }
-
 }
