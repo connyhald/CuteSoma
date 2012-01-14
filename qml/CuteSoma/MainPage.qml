@@ -3,7 +3,6 @@ import com.nokia.meego 1.0
 
 Page {
     id: mainPage
-    tools: commonTools
 
     property string currentChannel: ""
 
@@ -20,7 +19,7 @@ Page {
         {
             text: "CuteSoma"
             color: "white"
-            font.family: "Nokia Pure Text"
+            font.family: "Nokia Pure Text Light"
             font.pixelSize: 32
             anchors.left: parent.left
             anchors.leftMargin: 20

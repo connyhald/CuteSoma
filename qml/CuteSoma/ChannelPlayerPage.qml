@@ -7,8 +7,6 @@ Page
 
     property QtObject model: null
 
-    tools: backMenuTool
-
     Connections
     {
         target: serverComm
@@ -339,46 +337,62 @@ Page
 
     }
 
-    states: [
-            State {
-                name: "inLandscape"
-                when: !appWindow.inPortrait
-                PropertyChanges {
-                    target: channelLandscapeLayout
-                    visible: true
-                }
-                PropertyChanges {
-                    target: channelPortraitLayout
-                    visible: false
-                }
-            },
-            State {
-                name: "inPortrait"
-                when: appWindow.inPortrait
-                PropertyChanges {
-                    target: channelLandscapeLayout
-                    visible: false
-                }
-                PropertyChanges {
-                    target: channelPortraitLayout
-                    visible: true
-                }
-            }
-        ]
-
-    ToolBarLayout
+    Label
     {
-            id: backMenuTool
-            visible: true
-            ToolIcon { iconId: "toolbar-back"; onClicked: { pageStack.pop(); } }
-
-            BusyIndicator
-            {
-                id: indicator
-                platformStyle: BusyIndicatorStyle { size: "small" }
-                running: true
-                visible: true
-                anchors.centerIn: parent
-            }
+        id: noChannelIndicator
+        text: "No channel selected yet"
+        color: "gray"
+        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+        horizontalAlignment: Text.Center
+        font.pixelSize: 80
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.margins: 20
     }
+
+
+    states: [
+        State {
+            name: "noChannelSelected"
+            when: model === null
+            PropertyChanges {
+                target: channelLandscapeLayout
+                visible: false
+            }
+            PropertyChanges {
+                target: channelPortraitLayout
+                visible: false
+            }
+            PropertyChanges {
+                target: noChannelIndicator
+                visible: true
+            }
+        },
+        State {
+            name: "inLandscape"
+            when: !appWindow.inPortrait
+            PropertyChanges {
+                target: channelLandscapeLayout
+                visible: true
+            }
+            PropertyChanges {
+                target: channelPortraitLayout
+                visible: false
+            }
+        },
+        State {
+            name: "inPortrait"
+            when: appWindow.inPortrait
+            PropertyChanges {
+                target: channelLandscapeLayout
+                visible: false
+            }
+            PropertyChanges {
+                target: channelPortraitLayout
+                visible: true
+            }
+        }
+    ]
+
 }

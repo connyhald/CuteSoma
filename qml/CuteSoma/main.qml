@@ -1,50 +1,54 @@
 import QtQuick 1.0
 import com.nokia.meego 1.0
 
-PageStackWindow
-{
+PageStackWindow {
     id: appWindow
-    initialPage: mainPage
 
-    MainPage { id: mainPage }
+    initialPage: Page {
+        anchors.fill: parent
 
-    About { id: aboutPage }
+        tools: ToolBarLayout {
+            id: toolBarLayout
 
-    ChannelPlayer { id: channelPlayer }
-
-    ToolBarLayout
-    {
-        id: commonTools
-        visible: true
-
-        ToolIcon
-        {
-            platformIconId: "toolbar-view-menu";
-            anchors.right: parent===undefined ? undefined : parent.right
-            onClicked: (myMenu.status == DialogStatus.Closed) ? myMenu.open() : myMenu.close()
+            ButtonRow {
+                TabButton {
+                    text: "Channels"
+                    iconSource: "image://theme/icon-m-toolbar-list"
+                    tab: mainPage
+                }
+                TabButton {
+                    text: "Player"
+                    iconSource: "image://theme/icon-m-toolbar-content-audio"
+                    tab: channelPlayerPage
+                }
+            }
+            ToolIcon {
+                iconId: "toolbar-view-menu"
+                onClicked: (menu.status === DialogStatus.Closed) ? menu.open() : menu.close()
+            }
         }
 
-        BusyIndicator
-        {
-            id: channelLoadingIndicator
-            platformStyle: BusyIndicatorStyle { size: "small" }
-            running: true
-            visible: false
-            anchors.centerIn: parent
+        TabGroup {
+            id: tabGroup
+            currentTab: mainPage
+            anchors.fill: parent
+            MainPage { id: mainPage }
+            ChannelPlayerPage { id: channelPlayerPage }
         }
     }
 
+
     Menu
     {
-        id: myMenu
-        visualParent: pageStack
+        id: menu
+        //visualParent: pageStack
 
         MenuLayout
         {
             MenuItem
             {
                 text: "About"
-                onClicked: { pageStack.push(aboutPage); }
+                onClicked: { pageStack.push(Qt.resolvedUrl("About.qml")) }
             }
             MenuItem
             {
