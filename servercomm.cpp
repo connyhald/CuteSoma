@@ -12,6 +12,8 @@
 ServerComm::ServerComm(QObject *parent) :
     QObject(parent)
 {
+    m_progress = 0;
+
     playlistNetworkReader = new QNetworkAccessManager(this);
     connect(playlistNetworkReader, SIGNAL(finished(QNetworkReply*)), this, SLOT(finishLoadingChannel(QNetworkReply*)));
 
@@ -21,14 +23,15 @@ ServerComm::ServerComm(QObject *parent) :
     player = new QMediaPlayer(this);
     mediaplaylist = new QMediaPlaylist;
     player->setPlaylist(mediaplaylist);
+    player->setNotifyInterval(1000); // Only emit signal once every second. Should save some battery
 
     connect(player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(setMediaStatus(QMediaPlayer::MediaStatus)));
-    connect(player, SIGNAL(positionChanged(qint64)), this, SLOT(updateProgress(qint64)));
+    connect(player, SIGNAL(positionChanged(qint64)), this, SLOT(setProgress(qint64)));
 
     connect(player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(playerState(QMediaPlayer::State)));
 
     nowPlayingSongTimer = new QTimer(this);
-    connect(nowPlayingSongTimer, SIGNAL(timeout()), this, SLOT(checkSongUpdates()));
+    connect(nowPlayingSongTimer, SIGNAL(timeout()), this, SIGNAL(updateSong()));
 }
 
 void ServerComm::play()
@@ -43,7 +46,7 @@ void ServerComm::pause()
 
 void ServerComm::loadChannel(QString channelUrl)
 {
-    channelLoading();
+    setChannelLoading(true);
     playlistNetworkReader->get(QNetworkRequest(channelUrl));
 }
 
@@ -60,34 +63,20 @@ void ServerComm::finishLoadingChannel(QNetworkReply *reply)
     player->play();
 }
 
-void ServerComm::updateProgress(qint64 time)
-{
-    int minutes = 0;
-    int seconds = 0;
-
-    minutes = (time / 1000) / 60;
-    seconds = (time / 1000) % 60;
-
-    QString min_str = QString("%1").arg(minutes, 2, 10, QLatin1Char('0'));
-    QString sec_str = QString("%1").arg(seconds, 2, 10, QLatin1Char('0'));
-
-    positionUpdate(min_str, sec_str);
-}
-
 void ServerComm::setMediaStatus(QMediaPlayer::MediaStatus state)
 {
     switch (state) {
     case QMediaPlayer::BufferingMedia:
-        channelLoading();
+        setChannelLoading(true);
         break;
     case QMediaPlayer::BufferedMedia:
-        channelLoaded();
+        setChannelLoading(false);
         break;
     case QMediaPlayer::LoadingMedia:
-        channelLoading();
+        setChannelLoading(true);
         break;
     case QMediaPlayer::StalledMedia:
-        channelLoading();
+        setChannelLoading(true);
         break;
     default:
         break;
@@ -105,12 +94,15 @@ void ServerComm::playerState(QMediaPlayer::State state)
     {
         case QMediaPlayer::StoppedState:
             nowPlayingSongTimer->stop();
+            setPlaying(false);
             break;
         case QMediaPlayer::PlayingState:
             nowPlayingSongTimer->start(SONGS_POLL_TIME);
+            setPlaying(true);
             break;
         case QMediaPlayer::PausedState:
             nowPlayingSongTimer->stop();
+            setPlaying(false);
             break;
     }
 }
@@ -141,5 +133,41 @@ void ServerComm::finishReadingChannelInfo(QNetworkReply *reply)
             lastPlaying = channels.at(i).toElement().elementsByTagName("lastPlaying").at(0).toElement().text();
     }
 
-    channelSongUpdate(lastPlaying);
+    setLastPlaying(lastPlaying);
+}
+
+bool ServerComm::isPlaying() { return m_playing; }
+void ServerComm::setPlaying(bool playing)
+{
+    if (m_playing != playing) {
+        m_playing = playing;
+        emit playingChanged();
+    }
+}
+
+bool ServerComm::isChannelLoading() { return m_channelLoading; }
+void ServerComm::setChannelLoading(bool loading)
+{
+    if (m_channelLoading != loading) {
+        m_channelLoading = loading;
+        emit channelLoadingChanged();
+    }
+}
+
+QString ServerComm::lastPlaying() { return m_lastPlaying; }
+void ServerComm::setLastPlaying(QString lastPlaying)
+{
+    if (m_lastPlaying != lastPlaying) {
+        m_lastPlaying = lastPlaying;
+        emit lastPlayingChanged();
+    }
+}
+
+qint64 ServerComm::progress() { return m_progress; }
+void ServerComm::setProgress(qint64 time)
+{
+    if (m_progress != time) {
+        m_progress = time;
+        emit progressChanged();
+    }
 }

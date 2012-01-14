@@ -32,7 +32,7 @@ PageStackWindow {
             id: tabGroup
             currentTab: mainPage
             anchors.fill: parent
-            MainPage { id: mainPage }
+            ChannelListPage { id: mainPage }
             ChannelPlayerPage { id: channelPlayerPage }
         }
     }

@@ -7,39 +7,23 @@ Page
 
     property QtObject model: null
 
-    Connections
-    {
+    Connections {
         target: serverComm
-
-        onChannelLoading:
-        {
-            indicator.visible = true;
-        }
-
-        onChannelLoaded:
-        {
-            indicator.visible = false;
-        }
-
-        onPositionUpdate:
-        {
-            counterLabelP.text = minutes + ":" + seconds;
-            counterLabelL.text = minutes + ":" + seconds;
-        }
-
-        onUpdateSong:
-        {
-            if (model) {
-                serverComm.updateChannelInfo(model.channelId);
-            }
-        }
-
-        onChannelSongUpdate:
-        {
-            songLabelP.text = song;
-            songLabelL.text = song;
-        }
+        onUpdateSong: if (model) serverComm.updateChannelInfo(model.channelId)
     }
+
+    // Takes duration in milli-seconds and outputs minutes:seconds
+    function prettyDuration(msecs) {
+        var secs = msecs / 1000;
+        var resultMins = Math.floor(secs / 60); // round down
+        var resultSecs = Math.round(secs % 60);
+
+        // Add leading 0 if needed
+        if (resultSecs < 10) resultSecs = "0" + resultSecs;
+
+        return resultMins + ":" + resultSecs;
+    }
+
 
     Item
     {
@@ -53,18 +37,22 @@ Page
             anchors.top: parent.bottom
             anchors.topMargin: 10
 
-            Image
-            {
+            Rectangle {
                 id: radioImageL
-                source: model ? (model.channelImageBig === "" ? model.channelImage : model.channelImageBig) : ""
+                color: "gray"
                 width: 310
                 height: 310
-                sourceSize.width: 310
-                sourceSize.height: 310
-                asynchronous: true
-                smooth: true
                 anchors.left: parent.left
                 anchors.leftMargin: 10
+
+                Image {
+                    source: model ? (model.channelImageBig === "" ? model.channelImage : model.channelImageBig) : ""
+                    sourceSize.width: 310
+                    sourceSize.height: 310
+                    asynchronous: true
+                    smooth: true
+                    anchors.fill: parent
+                }
             }
 
             Item
@@ -115,7 +103,7 @@ Page
                 Label
                 {
                     id: songLabelL
-                    text: model ? model.song : ""
+                    text: serverComm.lastPlaying
                     font.pixelSize: 25;
                     font.weight: Font.Bold;
                     anchors.top: listenersLabelL.bottom
@@ -132,52 +120,16 @@ Page
             anchors.left: parent.left
             anchors.leftMargin: 10
 
-            Button
-            {
+            Button {
                 id: playStopButtonL
-
-                Image
-                {
-                    id: imgPlayL
-                    anchors.centerIn: parent
-                    visible: false
-                    source: "image://theme/icon-m-toolbar-mediacontrol-play" + (theme.inverted ? "-inverse" : "")
-                }
-
-                Image
-                {
-                    id: imgPauseL
-                    anchors.centerIn: parent
-                    source: "image://theme/icon-m-toolbar-mediacontrol-pause" + (theme.inverted ? "-inverse" : "")
-                }
-
-                onClicked:
-                {
-                    if (imgPlayL.visible)
-                    {
-                        imgPlayP.visible = false;
-                        imgPauseP.visible = true;
-                        imgPlayL.visible = false;
-                        imgPauseL.visible = true;
-
-                        serverComm.play();
-                    }
-                    else
-                    {
-                        imgPlayP.visible = true;
-                        imgPauseP.visible = false;
-                        imgPlayL.visible = true;
-                        imgPauseL.visible = false;
-
-                        serverComm.pause();
-                    }
-                }
+                iconSource: serverComm.playing ? "image://theme/icon-m-toolbar-mediacontrol-pause" : "image://theme/icon-m-toolbar-mediacontrol-play"
+                onClicked: serverComm.playing ? serverComm.pause() : serverComm.play()
             }
 
             Label
             {
                 id: counterLabelL
-                text: "00:00"
+                text: prettyDuration(serverComm.progress)
                 anchors.left: playStopButtonL.right
                 anchors.leftMargin: playStopButtonL.width + 100
             }
@@ -188,153 +140,118 @@ Page
     {
         id: channelPortraitLayout
         visible: false
-        anchors.verticalCenterOffset: 5
-        anchors.left: parent.left
+        anchors.fill: parent
 
-        Item
-        {
-            id: songItemP
-            anchors.top: parent.bottom
-            anchors.topMargin: 10
+        Column {
+            spacing: 15
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 30
 
-            Image
-            {
-                id: radioImageP
-                source: model ? (model.channelImageBig === "" ? model.channelImage : model.channelImageBig) : ""
-                width: 400
-                height: 400
-                sourceSize.height: 400
-                sourceSize.width: 400
-                asynchronous: true
-                smooth: true
-                anchors.top: parent.top
-                anchors.topMargin: 10
-                anchors.left: parent.left
-                anchors.leftMargin: 40
+            Header {
+                text:  model ? model.channelName : ""
+                portrait: appWindow.inPortrait
+                anchors.margins: -30
+
+                BusyIndicator {
+                    id: indicator
+                    running: serverComm.channelLoading
+                    visible: running
+                    style: BusyIndicatorStyle { spinnerFrames: "image://theme/spinnerinverted" }
+                    anchors.right: parent.right
+                    anchors.rightMargin: 30
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
 
-            Item
-            {
-                anchors.top: radioImageP.bottom
-                anchors.topMargin: 10
+            Rectangle {
+                color: "gray"
+                height: width
                 anchors.left: parent.left
-                anchors.leftMargin: 15
+                anchors.right: parent.right
 
-                Label
-                {
-                    id: nameLabelP
-                    text: model ? model.channelName : ""
-                    font.pixelSize: 34;
-                    font.weight: Font.Bold;
+                BusyIndicator {
+                    style: BusyIndicatorStyle { size: "large"; spinnerFrames: "image://theme/spinnerinverted" }
+                    visible: running
+                    running: radioImageP.status === Image.Loading
+                    anchors.centerIn: parent
                 }
 
-                Label
-                {
+                Image {
+                    id: radioImageP
+                    source: model ? (model.channelImageBig === "" ? model.channelImage : model.channelImageBig) : ""
+                    sourceSize.height: 400
+                    sourceSize.width: 400
+                    asynchronous: true
+                    smooth: true
+                    anchors.fill: parent
+                }
+            }
+
+            Column {
+                spacing: 0
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                Label {
                     id: djLabelP
                     text: "Dj: " + (model ? model.channelDj : "")
                     font.pixelSize: 25;
                     font.weight: Font.Light;
-                    anchors.top: nameLabelP.bottom
-                    anchors.topMargin: 10
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                 }
 
-                Label
-                {
+                Label {
                     id: descriptionLabelP
                     text: model ? model.channelDescription : ""
                     font.pixelSize: 25;
                     font.weight: Font.Light;
-                    width: channelPlayer.width - 20
-                    wrapMode: "WordWrap";
-                    anchors.top: djLabelP.bottom
-                    anchors.topMargin: 10
+                    wrapMode: "WordWrap"
+                    maximumLineCount: 2
+                    elide: Text.Right
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                 }
 
-                Label
-                {
+                Label {
                     id: listenersLabelP
                     text: "Listeners: " + (model ? model.channelListeners : "")
                     font.pixelSize: 25;
                     font.weight: Font.Light;
-                    anchors.top: descriptionLabelP.bottom
-                    anchors.topMargin: 10
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                }
+
+                Label {
+                    id: songLabelP
+                    text: serverComm.lastPlaying
+                    font.pixelSize: 25;
+                    font.weight: Font.Bold;
+                    elide: Text.Right
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                }
+            }
+
+            Row {
+                spacing: 15
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                Button {
+                    iconSource: serverComm.playing ? "image://theme/icon-m-toolbar-mediacontrol-pause" : "image://theme/icon-m-toolbar-mediacontrol-play"
+                    onClicked: serverComm.playing ? serverComm.pause() : serverComm.play()
                 }
 
                 Label
                 {
-                    id: songLabelP
-                    text: model ? model.song : ""
-                    font.pixelSize: 25;
-                    font.weight: Font.Bold;
-                    anchors.top: listenersLabelP.bottom
-                    anchors.topMargin: 10
-                    width: channelPlayer.width - 30
-                    wrapMode: "WordWrap"
+                    id: counterLabelP
+                    text: prettyDuration(serverComm.progress)
+                    anchors.verticalCenter: parent.verticalCenter
                 }
             }
         }
-
-        Item
-        {
-            id: controlRowP
-            anchors.top: parent.top
-            anchors.topMargin: 690
-            anchors.left: parent.left
-            anchors.leftMargin: 15
-
-            Button
-            {
-                id: playStopButtonP
-
-                Image
-                {
-                    id: imgPlayP
-                    anchors.centerIn: parent
-                    visible: false
-                    source: "image://theme/icon-m-toolbar-mediacontrol-play" + (theme.inverted ? "-inverse" : "")
-                }
-
-                Image
-                {
-                    id: imgPauseP
-                    anchors.centerIn: parent
-                    source: "image://theme/icon-m-toolbar-mediacontrol-pause" + (theme.inverted ? "-inverse" : "")
-                }
-
-                onClicked:
-                {
-                    if (imgPlayP.visible)
-                    {
-                        imgPlayP.visible = false;
-                        imgPauseP.visible = true;
-                        imgPlayL.visible = false;
-                        imgPauseL.visible = true;
-
-                        serverComm.play();
-                    }
-                    else
-                    {
-                        imgPlayP.visible = true;
-                        imgPauseP.visible = false;
-                        imgPlayL.visible = true;
-                        imgPauseL.visible = false;
-
-                        serverComm.pause();
-                    }
-                }
-            }
-
-            Label
-            {
-                id: counterLabelP
-                text: "00:00"
-                anchors.left: playStopButtonP.right
-                anchors.leftMargin: 50
-                anchors.top: parent.top
-                anchors.topMargin: 15
-            }
-        }
-
     }
 
     Label
